@@ -1,0 +1,5 @@
+#title {
+    height: 50px;
+    -unity-text-align: upper-center;
+    font-size: 30px;
+}

@@ -1,0 +1,47 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/ChannelPackerTool/Resources/Style/ChannelPackerToolStyles.uss?fileID=7433441132597879392&amp;guid=586025f049d204f48bee13f6193985ef&amp;type=3#ChannelPackerToolStyles" />
+    <ui:Label text="Channel Packer Tool" display-tooltip-when-elided="true" name="title" style="-unity-font-style: bold;" />
+    <ui:GroupBox style="flex-direction: column;">
+        <ui:GroupBox style="align-items: center; overflow: visible; white-space: normal;">
+            <ui:Label text="This tool allows to pack 4 images into a single packed one. Select the 4 input images you would like to pack, each correspoonding to a channel in the created image." display-tooltip-when-elided="true" style="flex-wrap: nowrap; align-items: center; overflow: visible; white-space: normal;" />
+            <ui:Label text="Pick your images, hit pack, and export." />
+        </ui:GroupBox>
+        <ui:GroupBox name="input-pane" style="flex-grow: 0; align-items: center; flex-direction: row; flex-wrap: wrap; justify-content: center; flex-shrink: 0;">
+            <ui:Label text="Input" display-tooltip-when-elided="true" name="input-pane-title" style="font-size: 20px; -unity-text-align: upper-center; -unity-font-style: normal; flex-grow: 1; width: 100%;" />
+            <ui:VisualElement name="r-pane" style="justify-content: flex-start; align-items: center; -unity-text-align: upper-left;">
+                <uie:ObjectField label="Image R" type="UnityEngine.Texture2D, UnityEngine.CoreModule" name="r-input" style="-unity-text-align: upper-left;" />
+                <ui:VisualElement name="r-preview" style="background-image: resource(&apos;Transparency500&apos;); flex-grow: 0; width: 150px; height: 150px; position: relative; justify-content: center; align-items: center;">
+                    <ui:VisualElement name="r-preview-img" style="align-items: auto; justify-content: flex-start; width: 90%; height: 90%;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="g-pane" style="justify-content: flex-start; align-items: center;">
+                <uie:ObjectField label="Image G" type="UnityEngine.Texture2D, UnityEngine.CoreModule" name="g-input" style="-unity-text-align: upper-left;" />
+                <ui:VisualElement name="g-preview" style="background-image: resource(&apos;Transparency500&apos;); flex-grow: 0; width: 150px; height: 150px; position: relative; align-items: center; justify-content: center;">
+                    <ui:VisualElement name="g-preview-img" style="align-items: auto; justify-content: flex-start; width: 90%; height: 90%;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="b-pane" style="justify-content: flex-start; align-items: center;">
+                <uie:ObjectField label="Image B" type="UnityEngine.Texture2D, UnityEngine.CoreModule" name="b-input" style="-unity-text-align: upper-left; justify-content: space-between;" />
+                <ui:VisualElement name="b-preview" style="background-image: resource(&apos;Transparency500&apos;); flex-grow: 0; width: 150px; height: 150px; position: relative; justify-content: center; align-items: center;">
+                    <ui:VisualElement name="b-preview-img" style="align-items: auto; justify-content: flex-start; width: 90%; height: 90%;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="a-pane" style="justify-content: flex-start; align-items: center;">
+                <uie:ObjectField label="Image A" type="UnityEngine.Texture2D, UnityEngine.CoreModule" name="a-input" style="-unity-text-align: upper-left;" />
+                <ui:VisualElement name="a-preview" style="background-image: resource(&apos;Transparency500&apos;); flex-grow: 0; width: 150px; height: 150px; position: relative; justify-content: center; align-items: center;">
+                    <ui:VisualElement name="a-preview-img" style="align-items: auto; justify-content: flex-start; width: 90%; height: 90%;" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:GroupBox>
+        <ui:GroupBox style="align-items: center;">
+            <ui:Button text="Pack" name="pack-btn" display-tooltip-when-elided="true" style="align-items: center; width: 50%;" />
+        </ui:GroupBox>
+        <ui:GroupBox name="output-pane" style="flex-grow: 0; align-items: center; flex-wrap: wrap;">
+            <ui:Label text="Output" display-tooltip-when-elided="true" name="output-pane-title" style="font-size: 20px; -unity-text-align: upper-center; -unity-font-style: normal; width: 100%;" />
+            <ui:VisualElement name="out-preview" style="background-image: resource(&apos;Transparency500&apos;); flex-grow: 0; width: 300px; height: 300px; position: relative; justify-content: center; align-items: center;">
+                <ui:VisualElement name="out-preview-img" style="width: 90%; height: 90%;" />
+            </ui:VisualElement>
+            <ui:Button text="Export" display-tooltip-when-elided="true" name="export-btn" style="flex-grow: 0; width: 50%;" />
+        </ui:GroupBox>
+    </ui:GroupBox>
+</ui:UXML>
