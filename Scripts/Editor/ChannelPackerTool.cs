@@ -1,16 +1,13 @@
+using Codice.Client.BaseCommands.Import;
 using System;
-using System.ComponentModel.Composition.Primitives;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
+using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static Codice.Client.BaseCommands.Import.Commit;
+using Button = UnityEngine.UIElements.Button;
 using Color = UnityEngine.Color;
 using Object = UnityEngine.Object;
 
@@ -19,8 +16,16 @@ namespace AlexisMassa
     public class ChannelPackerTool : EditorWindow
     {
         private ObjectField RInTex, GInTex, BInTex, AInTex;
-        private Texture2D RSelected, GSelected, BSelected, ASelected, outTex;
-        private VisualElement RPreviewImg, GPreviewImg, BPreviewImg, APreviewImg, outputPreview;
+
+        IDictionary<char, int> selectedChannels = new Dictionary<char, int>() { { 'r', 0 }, { 'g', 0 }, { 'b', 0 }, { 'a', 0 } };
+        IDictionary<int, Texture2D> selectedTextures = new Dictionary<int, Texture2D>() { { 0, null }, { 1, null }, { 2, null }, { 3, null } };
+        IDictionary<char, char> selectedOutputChannels = new Dictionary<char, char>() { { 'r', 'r' }, { 'g', 'g' }, { 'b', 'b' }, { 'a', 'a' } };
+
+        private string[] radioNames = { "r0-radio", "g0-radio", "b0-radio", "a0-radio", "r1-radio", "g1-radio", "b1-radio", "a1-radio", "r2-radio", "g2-radio", "b2-radio", "a2-radio", "r3-radio", "g3-radio", "b3-radio", "a3-radio" };
+
+        DropdownField ROutChannel, GOutChannel, BOutChannel, AOutChannel;
+        private Texture2D outTex;
+        private VisualElement RRadioGroup, GRadioGroup, BRadioGroup, ARadioGroup, outputPreview;
         private Button packBtn, exportBtn;
         private string outName;
 
@@ -40,29 +45,59 @@ namespace AlexisMassa
             VisualElement tree = visualTree.Instantiate();
             root.Add(tree);
 
-            // Assign elements
-            RInTex = root.Q<ObjectField>("r-input");
-            GInTex = root.Q<ObjectField>("g-input");
-            BInTex = root.Q<ObjectField>("b-input");
-            AInTex = root.Q<ObjectField>("a-input");
-            RPreviewImg = root.Q<VisualElement>("r-preview-img");
-            GPreviewImg = root.Q<VisualElement>("g-preview-img");
-            BPreviewImg = root.Q<VisualElement>("b-preview-img");
-            APreviewImg = root.Q<VisualElement>("a-preview-img");
+            // Input textures
+            RInTex = root.Q<ObjectField>("input-img-0");
+            GInTex = root.Q<ObjectField>("input-img-1");
+            BInTex = root.Q<ObjectField>("input-img-2");
+            AInTex = root.Q<ObjectField>("input-img-3");
+
+            // Ouput channel dropdowns
+            ROutChannel = root.Q<DropdownField>("r-out-channel");
+            GOutChannel = root.Q<DropdownField>("g-out-channel");
+            BOutChannel = root.Q<DropdownField>("b-out-channel");
+            AOutChannel = root.Q<DropdownField>("a-out-channel");
+
+            // Radio groups
+            RRadioGroup = root.Q<VisualElement>("r-radio-group");
+            GRadioGroup = root.Q<VisualElement>("g-radio-group");
+            BRadioGroup = root.Q<VisualElement>("b-radio-group");
+            ARadioGroup = root.Q<VisualElement>("a-radio-group");
+
+            // Radio buttons and add them to their group
+            for (int i = 0; i < radioNames.Length; i++)
+            {
+                string btnId = radioNames[i];
+                RadioButton radioButton = root.Q<RadioButton>(btnId);
+                radioButton.RegisterValueChangedCallback(evt => OnRadioButtonValueChanged(evt, btnId));
+                radioButton.viewDataKey = btnId;
+
+                switch (btnId[0])
+                {
+                    case 'r': RRadioGroup.Add(radioButton); break;
+                    case 'g': GRadioGroup.Add(radioButton); break;
+                    case 'b': BRadioGroup.Add(radioButton); break;
+                    case 'a': ARadioGroup.Add(radioButton); break;
+                    default: break;
+                }
+
+            }
+
+            //Assign callbacks on input selection
+            RInTex.RegisterValueChangedCallback<Object>(evt => TextureSelected(evt, 0));
+            GInTex.RegisterValueChangedCallback<Object>(evt => TextureSelected(evt, 1));
+            BInTex.RegisterValueChangedCallback<Object>(evt => TextureSelected(evt, 2));
+            AInTex.RegisterValueChangedCallback<Object>(evt => TextureSelected(evt, 3));
+
+            //Assign callbacks on output channel selection
+            ROutChannel.RegisterValueChangedCallback(evt => OutputChannelSelected(evt, 'r'));
+            GOutChannel.RegisterValueChangedCallback(evt => OutputChannelSelected(evt, 'g'));
+            BOutChannel.RegisterValueChangedCallback(evt => OutputChannelSelected(evt, 'b'));
+            AOutChannel.RegisterValueChangedCallback(evt => OutputChannelSelected(evt, 'a'));
+
+
             outputPreview = root.Q<VisualElement>("out-preview-img");
             packBtn = root.Q<Button>("pack-btn");
             exportBtn = root.Q<Button>("export-btn");
-
-            //Assign callbacks
-            RInTex.RegisterValueChangedCallback<Object>(RTextureSelected);
-            GInTex.RegisterValueChangedCallback<Object>(GTextureSelected);
-            BInTex.RegisterValueChangedCallback<Object>(BTextureSelected);
-            AInTex.RegisterValueChangedCallback<Object>(ATextureSelected);
-
-            RPreviewImg.style.backgroundImage = null;
-            GPreviewImg.style.backgroundImage = null;
-            BPreviewImg.style.backgroundImage = null;
-            APreviewImg.style.backgroundImage = null;
             outTex = null;
             outName = "packed_image";
             outputPreview.style.backgroundImage = null;
@@ -72,26 +107,54 @@ namespace AlexisMassa
 
         }
 
+
         private void PackImages()
         {
-            // Add better check, maybe allow packing of x images and leave 4 - x blank channels ?
-            if (RSelected == null || GSelected == null || BSelected == null || ASelected == null) { Debug.LogError("All images aren't imported"); return; }
+            // If channel selected on a null image
+            foreach (var channel in selectedChannels) { if (selectedTextures[channel.Value] == null) { Debug.LogError("Do not select channels from images that are not imported."); return; } }
 
-            // TODO : Import Textures first
-            int maxWidth = new[] { RSelected.width, GSelected.width, BSelected.width, ASelected.width }.Max();
-            int maxHeight = new[] { RSelected.height, GSelected.height, BSelected.height, ASelected.height }.Max();
+            // If multiple out put channels have been selected
+            char[] alreadySelected = new char[4];
+            foreach (var selectedOutputChannel in selectedOutputChannels)
+            {
+                if (Array.IndexOf(alreadySelected, selectedOutputChannel.Value) > -1) { Debug.LogError("Do not select an output channel more than once."); return; }
+                else { Array.Resize(ref alreadySelected, alreadySelected.Length + 1); alreadySelected[alreadySelected.GetUpperBound(0)] = selectedOutputChannel.Value; }
+            }
 
+            // Get maxwidth & max height
+            int maxWidth = new[] {
+                    selectedTextures[0] != null ? selectedTextures[0].width : 0,
+                    selectedTextures[1] != null ? selectedTextures[1].width : 0,
+                    selectedTextures[2] != null ? selectedTextures[2].width : 0,
+                    selectedTextures[3] != null ? selectedTextures[3].width : 0,
+                }.Max();
+            int maxHeight = new[] {
+                    selectedTextures[0] != null ? selectedTextures[0].height : 0,
+                    selectedTextures[1] != null ? selectedTextures[1].height : 0,
+                    selectedTextures[2] != null ? selectedTextures[2].height : 0,
+                    selectedTextures[3] != null ? selectedTextures[3].height : 0,
+                }.Max();
+
+
+            // create new Texture2D(maxwidth, maxheight)
             Texture2D packedImage = new Texture2D(maxWidth, maxHeight, TextureFormat.RGBA32, false);
-            // For each pixel
+            
+            // foreach pixel set color to color of selected image's channel
             for (int y = 0; y < maxHeight; y++)
             {
                 for (int x = 0; x < maxWidth; x++)
                 {
-                    // Get pixel and convert to grayscale
-                    float rc = RSelected.GetPixel(x, y).r;
-                    float gc = GSelected.GetPixel(x, y).g;
-                    float bc = BSelected.GetPixel(x, y).b;
-                    float ac = ASelected.GetPixel(x, y).a;
+                    float rc = 0;
+                    float gc = 0;
+                    float bc = 0;
+                    float ac = 0;
+
+                    // Get pixel from selected image's selected channel
+                    // selected texture that has the selected channel that is the selected output corresponding to the channel
+                    rc = selectedTextures[selectedChannels[selectedOutputChannels['r']]].GetPixel(x, y).r;
+                    gc = selectedTextures[selectedChannels[selectedOutputChannels['g']]].GetPixel(x, y).g;
+                    bc = selectedTextures[selectedChannels[selectedOutputChannels['b']]].GetPixel(x, y).b;
+                    ac = selectedTextures[selectedChannels[selectedOutputChannels['a']]].GetPixel(x, y).a;
 
                     // Create color with values
                     Color packedColor = new Color(rc, gc, bc, ac);
@@ -110,12 +173,12 @@ namespace AlexisMassa
         private void ExportImage(Texture2D outTex, string outName)
         {
             // Stop if outTexture hasn'hasn't been generated
-            if (outTex == null) { Debug.Log("Pack an image before trying to export it !"); return; }
+            if (outTex == null) { Debug.LogWarning("Pack an image before trying to export it !"); return; }
 
             // Prompt to select a saving path
             string savePath = EditorUtility.SaveFilePanel("Save packed image", "", outName, "png");
 
-            // Check is user cancelled the dialogue
+            // Check if user cancelled the dialogue
             if (string.IsNullOrEmpty(savePath)) { return; }
 
             // write data
@@ -124,54 +187,16 @@ namespace AlexisMassa
 
         }
 
-        #region texture selection events
-        private void RTextureSelected(ChangeEvent<Object> evt)
-        {
-            if (evt.newValue == null)
-            {
-                RSelected = null;
-                RPreviewImg.style.backgroundImage = null;
-                return;
-            }
-            RSelected = evt.newValue as Texture2D;
-            RPreviewImg.style.backgroundImage = RSelected;
-        }
-        private void GTextureSelected(ChangeEvent<Object> evt)
-        {
-            if (evt.newValue == null)
-            {
-                GSelected = null;
-                GPreviewImg.style.backgroundImage = null;
-                return;
-            }
-            GSelected = evt.newValue as Texture2D;
-            GPreviewImg.style.backgroundImage = GSelected;
+        #region Callbacks
+        private void OnRadioButtonValueChanged(ChangeEvent<bool> evt, string btnId) { if (evt.newValue) { selectedChannels[btnId[0]] = (int)Char.GetNumericValue(btnId[1]); } }
 
-        }
-        private void BTextureSelected(ChangeEvent<Object> evt)
+        private void TextureSelected(ChangeEvent<Object> evt, int id)
         {
-            if (evt.newValue == null)
-            {
-                BSelected = null;
-                BPreviewImg.style.backgroundImage = null;
-                return;
-            }
-            BSelected = evt.newValue as Texture2D;
-            BPreviewImg.style.backgroundImage = BSelected;
-
+            if (evt.newValue == null) { selectedTextures[id] = null; return; }
+            selectedTextures[id] = evt.newValue as Texture2D;
         }
-        private void ATextureSelected(ChangeEvent<Object> evt)
-        {
-            if (evt.newValue == null)
-            {
-                ASelected = null;
-                APreviewImg.style.backgroundImage = null;
-                return;
-            }
-            ASelected = evt.newValue as Texture2D;
-            APreviewImg.style.backgroundImage = ASelected;
 
-        }
+        private void OutputChannelSelected(ChangeEvent<string> evt, char selectedChannel) { selectedOutputChannels[selectedChannel] = Char.ToLower(evt.newValue[0]); }
         #endregion
     }
 
