@@ -138,7 +138,7 @@ namespace AlexisMassa
 
             // create new Texture2D(maxwidth, maxheight)
             Texture2D packedImage = new Texture2D(maxWidth, maxHeight, TextureFormat.RGBA32, false);
-            
+
             // foreach pixel set color to color of selected image's channel
             for (int y = 0; y < maxHeight; y++)
             {
@@ -149,12 +149,21 @@ namespace AlexisMassa
                     float bc = 0;
                     float ac = 0;
 
-                    // Get pixel from selected image's selected channel
+                    // Get pixel from selected image's selected channel if [x,y] is in its range
                     // selected texture that has the selected channel that is the selected output corresponding to the channel
-                    rc = selectedTextures[selectedChannels[selectedOutputChannels['r']]].GetPixel(x, y).r;
-                    gc = selectedTextures[selectedChannels[selectedOutputChannels['g']]].GetPixel(x, y).g;
+                    Texture2D image_r = selectedTextures[selectedChannels[selectedOutputChannels['r']]];
+                    if (x <= image_r.width && y <= image_r.height) rc = image_r.GetPixel(x, y).r;
+                    
+                    Texture2D image_g = selectedTextures[selectedChannels[selectedOutputChannels['g']]];
+                    if (x <= image_g.width && y <= image_g.height) gc = image_g.GetPixel(x, y).g;
+                    
+                    Texture2D image_b = selectedTextures[selectedChannels[selectedOutputChannels['b']]];
+                    if (x <= image_b.width && y <= image_b.height) bc = image_b.GetPixel(x, y).b;
                     bc = selectedTextures[selectedChannels[selectedOutputChannels['b']]].GetPixel(x, y).b;
-                    ac = selectedTextures[selectedChannels[selectedOutputChannels['a']]].GetPixel(x, y).a;
+                    
+                    Texture2D image_a = selectedTextures[selectedChannels[selectedOutputChannels['a']]];
+                    if (x <= image_a.width && y <= image_a.height) ac = image_a.GetPixel(x, y).a;
+
 
                     // Create color with values
                     Color packedColor = new Color(rc, gc, bc, ac);
