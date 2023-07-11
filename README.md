@@ -10,9 +10,9 @@ Then select the destination channel for each of those channel. \
 Example : \
 ![Alt text](image.png) \
 The R channel from image 1 will be packed into the G channel. \
-The G channel from image 1 will be packed into the R channel. \
-The B channel from image 1 will be packed into the B channel. \
-The A channel from image 1 will be packed into the A channel. 
+The G channel from image 2 will be packed into the R channel. \
+The B channel from image 3 will be packed into the B channel. \
+The A channel from image 3 will be packed into the A channel. 
 
 ### Rules
 - Only chose channels from images that are imported. The above example will return an error (G, B and A channels are selected on images that aren't imported).
