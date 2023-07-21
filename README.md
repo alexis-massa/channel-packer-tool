@@ -1,4 +1,5 @@
 # Channel Packer Tool
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This tool allows to pack channels from different images into a new image.
 
