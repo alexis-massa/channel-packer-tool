@@ -2,6 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub Release](https://img.shields.io/github/release/alexis-massa/channel-packer-tool)]() 
 [![GitHub all releases](https://img.shields.io/github/downloads/alexis-massa/channel-packer-tool/total.svg)]()
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5O3NGD1O)
 
 This tool allows to pack channels from different images into a new image.
 
