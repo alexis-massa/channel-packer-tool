@@ -1,8 +1,6 @@
-using Codice.Client.BaseCommands.Import;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Plastic.Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -41,7 +39,11 @@ namespace AlexisMassa
         private void CreateGUI()
         {
             VisualElement root = rootVisualElement;
-            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/ChannelPackerTool/Resources/UI Documents/ChannelPackerToolWindow.uxml");
+            string[] paths = AssetDatabase.FindAssets("t:VisualTreeAsset ChannelPackerToolWindow");
+            if (paths.Length != 1)
+                throw new Exception($"Unexpected number of ChannelPackerToolWindow VisualTreeAssets found: expected=1, got={paths.Length}");
+            
+            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(AssetDatabase.GUIDToAssetPath(paths[0]));
             VisualElement tree = visualTree.Instantiate();
             root.Add(tree);
 
